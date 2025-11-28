@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PDF Rigged</string>
+    <string name="title_activity_main">PDF Rigged</string>
+    <string name="package_name">com.pdfrigged.app</string>
+    <string name="custom_url_scheme">com.pdfrigged.app</string>
+</resources>
