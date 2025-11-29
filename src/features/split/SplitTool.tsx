@@ -5,6 +5,7 @@ import { PDFDocument } from "pdf-lib"
 import { FileUpload } from "@/components/ui/FileUpload"
 import { Button } from "@/components/ui/Button"
 import { X, FileText } from "lucide-react"
+import { downloadFile } from "@/utils/download"
 
 export function SplitTool() {
     const [file, setFile] = React.useState<File | null>(null)
@@ -23,19 +24,35 @@ export function SplitTool() {
     }
 
     const splitPDF = async () => {
-        if (!file || !range) return
+        console.log("splitPDF started. File:", file?.name, "Range:", range)
+        if (!file || !range) {
+            console.log("Missing file or range")
+            return
+        }
 
         setIsSplitting(true)
         try {
             const arrayBuffer = await file.arrayBuffer()
+            console.log("File loaded into buffer")
             const pdf = await PDFDocument.load(arrayBuffer)
             const totalPages = pdf.getPageCount()
+            console.log("PDF loaded. Total pages:", totalPages)
 
             // Parse range string (e.g., "1-3, 5")
-            const pageIndices = new Set<number>()
-            const parts = range.split(",").map(p => p.trim())
+            const parts = range.split(",").map(p => p.trim()).filter(p => p.length > 0)
+            console.log("Range parts:", parts)
+
+            if (parts.length === 0) {
+                alert("Please enter a valid page range.")
+                setIsSplitting(false)
+                return
+            }
+
+            let successCount = 0
 
             for (const part of parts) {
+                const pageIndices = new Set<number>()
+
                 if (part.includes("-")) {
                     const [start, end] = part.split("-").map(Number)
                     if (!isNaN(start) && !isNaN(end)) {
@@ -51,26 +68,38 @@ export function SplitTool() {
                         pageIndices.add(pageNum - 1)
                     }
                 }
+
+                if (pageIndices.size === 0) {
+                    console.warn(`No valid pages found in range part: ${part}`)
+                    continue
+                }
+
+                const newPdf = await PDFDocument.create()
+                const copiedPages = await newPdf.copyPages(pdf, Array.from(pageIndices))
+                copiedPages.forEach((page) => newPdf.addPage(page))
+
+                const pdfBytes = await newPdf.save()
+                const blob = new Blob([pdfBytes as any], { type: "application/pdf" })
+
+                // Generate filename based on range part to avoid collisions
+                // Sanitize part string for filename
+                const safePart = part.replace(/[^a-z0-9-]/gi, '_')
+                const filename = `split-${file.name.replace('.pdf', '')}-${safePart}.pdf`
+
+                console.log(`Downloading ${filename}...`)
+                await downloadFile(blob, filename)
+                successCount++
+
+                // Small delay to help browser handle multiple downloads
+                await new Promise(resolve => setTimeout(resolve, 500))
             }
 
-            if (pageIndices.size === 0) {
-                alert("Invalid page range.")
-                setIsSplitting(false)
-                return
+            if (successCount > 0) {
+                alert(`Split successful! Created ${successCount} PDF file(s).`)
+            } else {
+                alert("No valid pages found in the specified range(s).")
             }
 
-            const newPdf = await PDFDocument.create()
-            const copiedPages = await newPdf.copyPages(pdf, Array.from(pageIndices))
-            copiedPages.forEach((page) => newPdf.addPage(page))
-
-            const pdfBytes = await newPdf.save()
-            const blob = new Blob([pdfBytes as any], { type: "application/pdf" })
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement("a")
-            link.href = url
-            link.download = `split-${file.name}`
-            link.click()
-            URL.revokeObjectURL(url)
         } catch (error) {
             console.error("Error splitting PDF:", error)
             alert("Failed to split PDF. Please try again.")

@@ -5,6 +5,7 @@ import { PDFDocument } from "pdf-lib"
 import { FileUpload } from "@/components/ui/FileUpload"
 import { Button } from "@/components/ui/Button"
 import { X, Image as ImageIcon } from "lucide-react"
+import { downloadFile } from "@/utils/download"
 
 export function ImageToPdfTool() {
     const [files, setFiles] = React.useState<File[]>([])
@@ -49,12 +50,7 @@ export function ImageToPdfTool() {
 
             const pdfBytes = await pdfDoc.save()
             const blob = new Blob([pdfBytes as any], { type: "application/pdf" })
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement("a")
-            link.href = url
-            link.download = "images.pdf"
-            link.click()
-            URL.revokeObjectURL(url)
+            await downloadFile(blob, "images.pdf")
         } catch (error) {
             console.error("Error converting images to PDF:", error)
             alert("Failed to convert images. Please try again.")

@@ -10,11 +10,16 @@ interface AdBannerProps {
 }
 
 export function AdBanner({ className, slotId, format = "auto" }: AdBannerProps) {
+    const [mounted, setMounted] = React.useState(false)
     const isNative = Capacitor.isNativePlatform()
     const adRef = React.useRef<HTMLDivElement>(null)
 
     React.useEffect(() => {
-        if (!isNative && adRef.current) {
+        setMounted(true)
+    }, [])
+
+    React.useEffect(() => {
+        if (mounted && !isNative && adRef.current) {
             try {
                 // @ts-ignore
                 (window.adsbygoogle = window.adsbygoogle || []).push({})
@@ -22,7 +27,11 @@ export function AdBanner({ className, slotId, format = "auto" }: AdBannerProps) 
                 console.error("AdSense error", e)
             }
         }
-    }, [isNative])
+    }, [mounted, isNative])
+
+    if (!mounted) {
+        return <div className={`ad-container ${className} min-h-[100px] bg-transparent`} />
+    }
 
     if (isNative) {
         // Native AdMob Placeholder

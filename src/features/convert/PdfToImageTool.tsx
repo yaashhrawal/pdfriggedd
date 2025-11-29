@@ -4,6 +4,7 @@ import * as React from "react"
 import { FileUpload } from "@/components/ui/FileUpload"
 import { Button } from "@/components/ui/Button"
 import { X, FileText } from "lucide-react"
+import { downloadFile } from "@/utils/download"
 
 export function PdfToImageTool() {
     const [file, setFile] = React.useState<File | null>(null)
@@ -25,7 +26,7 @@ export function PdfToImageTool() {
         setIsConverting(true)
         try {
             const pdfjsLib = await import("pdfjs-dist")
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+            pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
 
             const arrayBuffer = await file.arrayBuffer()
             const pdf = await pdfjsLib.getDocument(arrayBuffer).promise
@@ -47,12 +48,7 @@ export function PdfToImageTool() {
                     )
 
                     if (blob) {
-                        const url = URL.createObjectURL(blob)
-                        const link = document.createElement("a")
-                        link.href = url
-                        link.download = `${file.name.replace(".pdf", "")}-page-${i}.jpg`
-                        link.click()
-                        URL.revokeObjectURL(url)
+                        await downloadFile(blob, `${file.name.replace(".pdf", "")}-page-${i}.jpg`)
                     }
                 }
             }

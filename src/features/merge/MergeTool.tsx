@@ -5,6 +5,7 @@ import { PDFDocument } from "pdf-lib"
 import { FileUpload } from "@/components/ui/FileUpload"
 import { Button } from "@/components/ui/Button"
 import { X, FileText } from "lucide-react"
+import { downloadFile } from "@/utils/download"
 
 export function MergeTool() {
     const [files, setFiles] = React.useState<File[]>([])
@@ -34,12 +35,7 @@ export function MergeTool() {
 
             const pdfBytes = await mergedPdf.save()
             const blob = new Blob([pdfBytes as any], { type: "application/pdf" })
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement("a")
-            link.href = url
-            link.download = "merged.pdf"
-            link.click()
-            URL.revokeObjectURL(url)
+            await downloadFile(blob, "merged.pdf")
         } catch (error) {
             console.error("Error merging PDFs:", error)
             alert("Failed to merge PDFs. Please try again.")

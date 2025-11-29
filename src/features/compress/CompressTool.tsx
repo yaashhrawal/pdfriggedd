@@ -6,6 +6,7 @@ import { FileUpload } from "@/components/ui/FileUpload"
 import { Button } from "@/components/ui/Button"
 import { X, FileText, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { downloadFile } from "@/utils/download"
 
 const COMPRESSION_LEVELS = [
     {
@@ -45,23 +46,56 @@ export function CompressTool() {
 
         setIsCompressing(true)
         try {
-            // Simulate compression delay
-            await new Promise((resolve) => setTimeout(resolve, 1500))
-
             const arrayBuffer = await file.arrayBuffer()
-            const pdf = await PDFDocument.load(arrayBuffer)
 
-            // In a real client-side app, we might use more advanced logic or WASM here.
-            // For now, we'll just save it which might optimize slightly by removing unused objects.
-            const pdfBytes = await pdf.save()
+            if (level === "extreme") {
+                // Extreme compression: Rasterize pages to JPEGs and rebuild PDF
+                const pdfjsLib = await import("pdfjs-dist")
+                pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
 
-            const blob = new Blob([pdfBytes as any], { type: "application/pdf" })
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement("a")
-            link.href = url
-            link.download = `compressed-${file.name}`
-            link.click()
-            URL.revokeObjectURL(url)
+                const loadingTask = pdfjsLib.getDocument(arrayBuffer)
+                const pdf = await loadingTask.promise
+                const newPdf = await PDFDocument.create()
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i)
+                    const viewport = page.getViewport({ scale: 1.0 }) // Standard scale
+                    const canvas = document.createElement("canvas")
+                    const context = canvas.getContext("2d")
+                    canvas.height = viewport.height
+                    canvas.width = viewport.width
+
+                    if (context) {
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: viewport,
+                        }
+                        await page.render(renderContext as any).promise
+                        const imgData = canvas.toDataURL("image/jpeg", 0.5) // 50% quality JPEG
+                        const img = await newPdf.embedJpg(imgData)
+                        const newPage = newPdf.addPage([viewport.width, viewport.height])
+                        newPage.drawImage(img, {
+                            x: 0,
+                            y: 0,
+                            width: viewport.width,
+                            height: viewport.height,
+                        })
+                    }
+                }
+
+                const pdfBytes = await newPdf.save()
+                const blob = new Blob([pdfBytes as any], { type: "application/pdf" })
+                await downloadFile(blob, `compressed-${file.name}`)
+
+            } else {
+                // Standard/Less compression: Just save (optimizes structure)
+                // In a real app, we'd need server-side tools for better compression without rasterization
+                const pdf = await PDFDocument.load(arrayBuffer)
+                const pdfBytes = await pdf.save()
+                const blob = new Blob([pdfBytes as any], { type: "application/pdf" })
+                await downloadFile(blob, `compressed-${file.name}`)
+            }
+
         } catch (error) {
             console.error("Error compressing PDF:", error)
             alert("Failed to compress PDF. Please try again.")

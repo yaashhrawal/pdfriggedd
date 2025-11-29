@@ -5,16 +5,34 @@ import { Button } from "@/components/ui/Button"
 import { FileText, User as UserIcon } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 
+import { usePathname, useRouter } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
+
 export function Header() {
     const { user, logout } = useAuth()
+    const pathname = usePathname()
+    const router = useRouter()
+    const isHome = pathname === "/"
 
     return (
         <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
             <div className="container flex h-16 items-center justify-between">
-                <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-                    <FileText className="h-6 w-6 text-primary" />
-                    <span>PDF<span className="text-primary">Rigged</span></span>
-                </Link>
+                <div className="flex items-center gap-2">
+                    {!isHome && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="md:hidden mr-2"
+                            onClick={() => router.back()}
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                    )}
+                    <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+                        <FileText className="h-6 w-6 text-primary" />
+                        <span>PDF<span className="text-primary">Rigged</span></span>
+                    </Link>
+                </div>
                 <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
                     <Link href="/merge_pdf" className="hover:text-primary transition-colors">Merge PDF</Link>
                     <Link href="/split_pdf" className="hover:text-primary transition-colors">Split PDF</Link>
