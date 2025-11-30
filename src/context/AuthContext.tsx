@@ -11,8 +11,8 @@ interface User {
 interface AuthContextType {
     user: User | null
     isLoading: boolean
-    login: (email: string) => Promise<void>
-    signup: (name: string, email: string) => Promise<void>
+    login: (email: string, password?: string) => Promise<void>
+    signup: (name: string, email: string, password?: string) => Promise<void>
     logout: () => Promise<void>
 }
 
@@ -23,44 +23,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = React.useState(true)
 
     React.useEffect(() => {
-        // Check for persisted user on mount
-        const storedUser = localStorage.getItem("pdf_rigged_user")
-        if (storedUser) {
-            setUser(JSON.parse(storedUser))
+        // Check for persisted session on mount
+        const storedSession = localStorage.getItem("pdf_rigged_session")
+        if (storedSession) {
+            setUser(JSON.parse(storedSession))
         }
         setIsLoading(false)
     }, [])
 
-    const login = async (email: string) => {
+    const login = async (email: string, password?: string) => {
         setIsLoading(true)
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 500)) // Fake delay
 
-        // Mock login - in a real app, we'd verify password
-        const mockUser = {
-            id: "1",
-            name: email.split("@")[0], // Derive name from email for demo
-            email,
+        const usersDb = localStorage.getItem("pdf_rigged_users_db")
+        const users = usersDb ? JSON.parse(usersDb) : []
+
+        const foundUser = users.find((u: any) => u.email === email && u.password === password)
+
+        if (foundUser) {
+            const sessionUser = {
+                id: foundUser.id,
+                name: foundUser.name,
+                email: foundUser.email
+            }
+            setUser(sessionUser)
+            localStorage.setItem("pdf_rigged_session", JSON.stringify(sessionUser))
+            setIsLoading(false)
+        } else {
+            setIsLoading(false)
+            throw new Error("Invalid email or password")
         }
-
-        setUser(mockUser)
-        localStorage.setItem("pdf_rigged_user", JSON.stringify(mockUser))
-        setIsLoading(false)
     }
 
-    const signup = async (name: string, email: string) => {
+    const signup = async (name: string, email: string, password?: string) => {
         setIsLoading(true)
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 500)) // Fake delay
 
-        const mockUser = {
-            id: "1",
-            name,
-            email,
+        const usersDb = localStorage.getItem("pdf_rigged_users_db")
+        const users = usersDb ? JSON.parse(usersDb) : []
+
+        if (users.find((u: any) => u.email === email)) {
+            setIsLoading(false)
+            throw new Error("User already exists")
         }
 
-        setUser(mockUser)
-        localStorage.setItem("pdf_rigged_user", JSON.stringify(mockUser))
+        const newUser = {
+            id: Date.now().toString(),
+            name,
+            email,
+            password // In a real app, hash this!
+        }
+
+        users.push(newUser)
+        localStorage.setItem("pdf_rigged_users_db", JSON.stringify(users))
+
+        const sessionUser = {
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email
+        }
+
+        setUser(sessionUser)
+        localStorage.setItem("pdf_rigged_session", JSON.stringify(sessionUser))
         setIsLoading(false)
     }
 
@@ -68,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true)
         await new Promise((resolve) => setTimeout(resolve, 500))
         setUser(null)
-        localStorage.removeItem("pdf_rigged_user")
+        localStorage.removeItem("pdf_rigged_session")
         setIsLoading(false)
     }
 

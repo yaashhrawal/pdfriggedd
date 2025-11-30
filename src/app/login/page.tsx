@@ -10,13 +10,19 @@ import { FileText } from "lucide-react"
 export default function LoginPage() {
     const [email, setEmail] = React.useState("")
     const [password, setPassword] = React.useState("")
+    const [error, setError] = React.useState("")
     const { login, isLoading } = useAuth()
     const router = useRouter()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        await login(email)
-        router.push("/")
+        setError("")
+        try {
+            await login(email, password)
+            router.push("/")
+        } catch (err: any) {
+            setError(err.message || "Failed to login")
+        }
     }
 
     return (
@@ -35,6 +41,12 @@ export default function LoginPage() {
                         </Link>
                     </p>
                 </div>
+
+                {error && (
+                    <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md text-center">
+                        {error}
+                    </div>
+                )}
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4 rounded-md shadow-sm">

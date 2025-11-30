@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ToolCard } from "@/components/ui/ToolCard"
 import { AdBanner } from "@/components/ads/AdBanner"
-import { GitMerge, Scissors, Minimize2, FileImage, Image as ImageIcon } from "lucide-react"
+import { GitMerge, Scissors, Minimize2, FileImage, Image as ImageIcon, Camera, PenTool } from "lucide-react"
 
 const tools = [
   {
@@ -33,6 +33,18 @@ const tools = [
     description: "Convert your images to PDF. Adjust orientation and margins.",
     icon: ImageIcon,
     href: "/jpg_to_pdf",
+  },
+  {
+    title: "Scanner",
+    description: "Scan documents with your camera, apply filters, and save as PDF.",
+    icon: Camera,
+    href: "/scanner",
+  },
+  {
+    title: "Sign PDF",
+    description: "Draw your signature and sign PDF documents online.",
+    icon: PenTool,
+    href: "/sign_pdf",
   },
 ]
 

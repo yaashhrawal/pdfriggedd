@@ -11,13 +11,19 @@ export default function SignupPage() {
     const [name, setName] = React.useState("")
     const [email, setEmail] = React.useState("")
     const [password, setPassword] = React.useState("")
+    const [error, setError] = React.useState("")
     const { signup, isLoading } = useAuth()
     const router = useRouter()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        await signup(name, email)
-        router.push("/")
+        setError("")
+        try {
+            await signup(name, email, password)
+            router.push("/")
+        } catch (err: any) {
+            setError(err.message || "Failed to create account")
+        }
     }
 
     return (
@@ -36,6 +42,12 @@ export default function SignupPage() {
                         </Link>
                     </p>
                 </div>
+
+                {error && (
+                    <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md text-center">
+                        {error}
+                    </div>
+                )}
 
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4 rounded-md shadow-sm">

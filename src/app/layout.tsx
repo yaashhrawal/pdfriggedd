@@ -3,8 +3,12 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Shell } from "@/components/layout/Shell";
 import { AuthProvider } from "@/context/AuthContext";
+import { BackButtonHandler } from "@/components/BackButtonHandler";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "PDF Rigged - Free Online PDF Tools for AI Workflows",
@@ -52,7 +56,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
@@ -62,6 +66,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <BackButtonHandler />
         <AuthProvider>
           <Shell>{children}</Shell>
         </AuthProvider>
